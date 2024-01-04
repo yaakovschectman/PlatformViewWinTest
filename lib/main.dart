@@ -114,20 +114,35 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: 300),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: flex,
-                    child: Win32View(viewType: "test")
-                  ),
-                  Expanded(
-                    flex: 10,
-                    child: Container(color: Colors.green),
-                  )
-                ],
+            Stack(
+              children: [
+                ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: 300),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: flex,
+                      child: Win32View(viewType: "test")
+                    ),
+                    Expanded(
+                      flex: 10,
+                      child: Container(color: Colors.green),
+                    )
+                  ],
+                ),
               ),
+              Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.red),
+                    borderRadius: BorderRadius.all(Radius.circular(50)),
+                    color: Colors.red,
+                  ),
+                  width: 300,
+                  height: 300,
+                  color: Colors.red,
+                  // Build and run me, then comment out the above line, then hot restart.
+                ),
+              ],
             ),
           ],
         ),
