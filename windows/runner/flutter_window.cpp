@@ -27,6 +27,21 @@ static LRESULT CALLBACK WebViewWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARA
         webviewController->put_Bounds(bounds);
       }
       break;
+    case WM_DESTROY:
+      webviewController = nullptr;
+      webview = nullptr;
+      break;
+    case WM_SETFOCUS: {
+      std::cerr << "Platform view window gained focus\n";
+      if (webviewController != nullptr) {
+        webviewController->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_NEXT);
+      }
+      break;
+    }
+    case WM_KILLFOCUS: {
+      std::cerr << "Kill focus\n";
+      break;
+    }
     default:
       return DefWindowProc(hwnd, msg, wparam, lparam);
   }
@@ -69,8 +84,8 @@ bool FlutterWindow::OnCreate() {
   std::cerr << "Register window class returns " << RegisterClassEx(&wnd) << "\n";
 
   flutter_controller_->engine()->RegisterPlatformViewType("test", [](const PlatformViewCreationParams* params) {
-    HWND hWnd = CreateWindow(L"STATIC", L"testwebview", WS_VISIBLE | WS_CHILD, 0, 0, 800, 800, params->parent, NULL, NULL, NULL);
-    std::cerr << "Creating platform view " << (webviewController != nullptr) << ", " << (hWnd != NULL) << "\n";
+    HWND hWnd = CreateWindow(L"Webview", L"testwebview", WS_VISIBLE | WS_CHILD, 0, 0, 800, 800, params->parent, NULL, NULL, NULL);
+    std::cerr << "Creating platform view #" << hWnd << " with parent " << params->parent << "\n";
     RECT rect;
     GetClientRect(params->parent, &rect);
     std::cerr << "Parent is " << rect.right << " x " << rect.bottom << "\n";
@@ -165,6 +180,24 @@ bool FlutterWindow::OnCreate() {
 							    L"window.chrome.webview.postMessage(window.document.URL);",
 							    nullptr);
 						    // </CommunicationHostWeb>
+
+
+                webviewController->add_MoveFocusRequested(Microsoft::WRL::Callback<ICoreWebView2MoveFocusRequestedEventHandler>([](ICoreWebView2Controller* sender, ICoreWebView2MoveFocusRequestedEventArgs* args){
+                  COREWEBVIEW2_MOVE_FOCUS_REASON reason;
+                  args->get_Reason(&reason);
+                  std::cerr << "Moving focus from webview with reason " << reason << "\n";
+                  return S_OK;
+                }).Get(), &token);
+
+                webviewController->add_GotFocus(Microsoft::WRL::Callback<ICoreWebView2FocusChangedEventHandler>([hWnd](ICoreWebView2Controller* sender, IUnknown* args){
+                  HWND focus = ::GetFocus();
+                  std::cerr << "Webview got focus! Current focus HWND = " << focus << "\n";
+                  if (focus == GetParent(hWnd)) {
+                    std::cerr << "Focus is coming from Flutter Widget tree!\n";
+                    ::SetFocus(hWnd);
+                  }
+                  return S_OK;
+                }).Get(), &token);
 
 						    return S_OK;
 					    }).Get());

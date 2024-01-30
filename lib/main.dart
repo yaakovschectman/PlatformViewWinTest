@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -57,6 +58,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   int flex = 1;
+  Widget view = Container(width: 300, height: 300, color: Colors.black, child: const Text('I am early'));
+  TextEditingController c1 = TextEditingController(text: 'before');
+  TextEditingController c2 = TextEditingController(text: 'after');
 
   void _incrementCounter() {
     setState(() {
@@ -68,6 +72,16 @@ class _MyHomePageState extends State<MyHomePage> {
       _counter++;
       flex++;
     });
+  }
+
+  void _buildPlatformView() {
+      view = Win32View(viewType: "test");
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _buildPlatformView();
   }
 
   @override
@@ -114,6 +128,9 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            TextField(
+              controller: c1,
+            ),
             Stack(
               children: [
                 ConstrainedBox(
@@ -122,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     Expanded(
                       flex: flex,
-                      child: Win32View(viewType: "test")
+                      child: view,
                     ),
                     Expanded(
                       flex: 10,
@@ -139,10 +156,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   width: 300,
                   height: 300,
-                  color: Colors.red,
+                  //color: Colors.red,
                   // Build and run me, then comment out the above line, then hot restart.
                 ),
               ],
+            ),
+            TextField(
+              controller: c2,
             ),
           ],
         ),
