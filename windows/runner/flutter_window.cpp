@@ -190,12 +190,8 @@ bool FlutterWindow::OnCreate() {
                 }).Get(), &token);
 
                 webviewController->add_GotFocus(Microsoft::WRL::Callback<ICoreWebView2FocusChangedEventHandler>([hWnd](ICoreWebView2Controller* sender, IUnknown* args){
-                  HWND focus = ::GetFocus();
-                  std::cerr << "Webview got focus! Current focus HWND = " << focus << "\n";
-                  if (focus == GetParent(hWnd)) {
-                    std::cerr << "Focus is coming from Flutter Widget tree!\n";
-                    ::SetFocus(hWnd);
-                  }
+                  // This could probably be a method in FlutterViewController instead.
+                  ::SendMessage(GetParent(hWnd), WM_KILLFOCUS, (WPARAM)hWnd, NULL);
                   return S_OK;
                 }).Get(), &token);
 
