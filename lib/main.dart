@@ -158,6 +158,22 @@ class _MyHomePageState extends State<MyHomePage> {
             TextField(
               controller: c2,
             ),
+            Stack(
+              children: [
+                Focus(
+                  child: Container(width: 100, height: 100, color: Colors.pink),
+                  onFocusChange: (focus) {if (focus) print('Focus 1!');},
+                ),
+                Focus(
+                  child: Container(width: 100, height: 100, color: Colors.green),
+                  onFocusChange: (focus) {if (focus) print('Focus 2!');},
+                ),
+                Focus(
+                  child: Container(width: 100, height: 100, color: Colors.yellow),
+                  onFocusChange: (focus) {if (focus) print('Focus 3!');},
+                ),
+              ]
+            ),
           ],
         ),
       ),

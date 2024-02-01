@@ -19,6 +19,12 @@ static wil::com_ptr<ICoreWebView2Controller> webviewController;
 static wil::com_ptr<ICoreWebView2> webview;
 static LRESULT CALLBACK WebViewWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
   switch (msg) {
+    case WM_CREATE: {
+      CREATESTRUCT* pars = (CREATESTRUCT*)lparam;
+      void* user_data = pars->lpCreateParams;
+      SetWindowLongPtr(hwnd, 0, (LONG_PTR)user_data);
+      return DefWindowProc(hwnd, msg, wparam, lparam);
+    }
     case WM_SIZE:
       if (webviewController != nullptr) {
         RECT bounds;
@@ -34,7 +40,9 @@ static LRESULT CALLBACK WebViewWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARA
     case WM_SETFOCUS: {
       std::cerr << "Platform view window gained focus\n";
       if (webviewController != nullptr) {
-        webviewController->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_NEXT);
+        flutter::FlutterViewController* window = (flutter::FlutterViewController*)GetWindowLongPtr(hwnd, 0);
+        int reason = window->engine()->QueryFocusReason();
+        webviewController->MoveFocus(static_cast<COREWEBVIEW2_MOVE_FOCUS_REASON>(reason));
       }
       break;
     }
@@ -72,7 +80,7 @@ bool FlutterWindow::OnCreate() {
   wnd.lpszClassName = L"Webview";
   wnd.hIconSm = NULL;
   wnd.cbClsExtra = 0;
-  wnd.cbWndExtra = 0;
+  wnd.cbWndExtra = sizeof(void*) * 1;
   wnd.lpszMenuName = NULL;
   wnd.hIcon = NULL;
   wnd.hCursor = NULL;
@@ -84,7 +92,8 @@ bool FlutterWindow::OnCreate() {
   std::cerr << "Register window class returns " << RegisterClassEx(&wnd) << "\n";
 
   flutter_controller_->engine()->RegisterPlatformViewType("test", [](const PlatformViewCreationParams* params) {
-    HWND hWnd = CreateWindow(L"Webview", L"testwebview", WS_VISIBLE | WS_CHILD, 0, 0, 800, 800, params->parent, NULL, NULL, NULL);
+    flutter::FlutterViewController* view_controller = (flutter::FlutterViewController*)params->user_data;
+    HWND hWnd = CreateWindow(L"Webview", L"testwebview", WS_VISIBLE | WS_CHILD, 0, 0, 800, 800, params->parent, NULL, NULL, (LPVOID)view_controller);
     std::cerr << "Creating platform view #" << hWnd << " with parent " << params->parent << "\n";
     RECT rect;
     GetClientRect(params->parent, &rect);
@@ -94,12 +103,12 @@ bool FlutterWindow::OnCreate() {
       std::cerr << "Creating webview controller\n";
       CreateCoreWebView2EnvironmentWithOptions(nullptr, nullptr, nullptr,
 		    Microsoft::WRL::Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
-			    [hWnd](HRESULT result, ICoreWebView2Environment* env) -> HRESULT {
+			    [hWnd, view_controller](HRESULT result, ICoreWebView2Environment* env) -> HRESULT {
 
             std::cerr << "Creation callback\n";
 				    // Create a CoreWebView2Controller and get the associated CoreWebView2 whose parent is the main window hWnd
 				    env->CreateCoreWebView2Controller(hWnd, Microsoft::WRL::Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
-					    [hWnd](HRESULT result, ICoreWebView2Controller* controller) -> HRESULT {
+					    [hWnd, view_controller](HRESULT result, ICoreWebView2Controller* controller) -> HRESULT {
                 std::cerr << "Create core callback\n";
 						    if (controller != nullptr) {
                   std::cerr << "Assigning controller\n";
@@ -182,10 +191,11 @@ bool FlutterWindow::OnCreate() {
 						    // </CommunicationHostWeb>
 
 
-                webviewController->add_MoveFocusRequested(Microsoft::WRL::Callback<ICoreWebView2MoveFocusRequestedEventHandler>([](ICoreWebView2Controller* sender, ICoreWebView2MoveFocusRequestedEventArgs* args){
+                webviewController->add_MoveFocusRequested(Microsoft::WRL::Callback<ICoreWebView2MoveFocusRequestedEventHandler>([hWnd, view_controller](ICoreWebView2Controller* sender, ICoreWebView2MoveFocusRequestedEventArgs* args){
                   COREWEBVIEW2_MOVE_FOCUS_REASON reason;
                   args->get_Reason(&reason);
                   std::cerr << "Moving focus from webview with reason " << reason << "\n";
+                  view_controller->engine()->SendTabOut(hWnd, reason);
                   return S_OK;
                 }).Get(), &token);
 
@@ -207,7 +217,7 @@ bool FlutterWindow::OnCreate() {
     SetWindowLong(params->parent, GWL_STYLE, style);
     UpdateWindow(params->parent);*/
     return hWnd;
-  });
+  }, (void*)flutter_controller_.get());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
