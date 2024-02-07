@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'WebView Demo',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -32,7 +31,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'WebView Demo'),
     );
   }
 }
@@ -58,7 +57,7 @@ class MyHomePage extends StatefulWidget {
 int kMaxFlex = 12;
 
 class _MyHomePageState extends State<MyHomePage> {
-  int flex = 1;
+  int flex = 5;
   late Widget view;
   TextEditingController c1 = TextEditingController(text: 'lorem...');
   TextEditingController c2 = TextEditingController(text: 'ipsum...');
@@ -70,13 +69,18 @@ class _MyHomePageState extends State<MyHomePage> {
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
-      if (flex < kMaxFlex)
-        flex++;
+      if (flex < kMaxFlex) flex++;
+    });
+  }
+
+  void _decrementCounter() {
+    setState(() {
+      if (flex > 0) flex--;
     });
   }
 
   void _buildPlatformView() {
-      view = Win32View(viewType: "test");
+    view = Win32View(viewType: "test");
   }
 
   @override
@@ -128,21 +132,21 @@ class _MyHomePageState extends State<MyHomePage> {
             Stack(
               children: [
                 ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: 300),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: flex,
-                      child: view,
-                    ),
-                    Expanded(
-                      flex: kMaxFlex - flex,
-                      child: Container(color: Colors.green),
-                    )
-                  ],
+                  constraints: BoxConstraints(maxHeight: 300),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: flex,
+                        child: view,
+                      ),
+                      Expanded(
+                        flex: kMaxFlex - flex,
+                        child: Container(color: Colors.green),
+                      )
+                    ],
+                  ),
                 ),
-              ),
-              Container(
+                Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.red),
                     borderRadius: const BorderRadius.all(Radius.circular(50)),
@@ -158,29 +162,43 @@ class _MyHomePageState extends State<MyHomePage> {
             TextField(
               controller: c2,
             ),
-            Stack(
-              children: [
-                Focus(
-                  child: Container(width: 100, height: 100, color: Colors.pink),
-                  onFocusChange: (focus) {if (focus) print('Focus 1!');},
-                ),
-                Focus(
-                  child: Container(width: 100, height: 100, color: Colors.green),
-                  onFocusChange: (focus) {if (focus) print('Focus 2!');},
-                ),
-                Focus(
-                  child: Container(width: 100, height: 100, color: Colors.yellow),
-                  onFocusChange: (focus) {if (focus) print('Focus 3!');},
-                ),
-              ]
+            // Stack(
+            //   children: [
+            //     Focus(
+            //       child: Container(width: 100, height: 100, color: Colors.pink),
+            //       onFocusChange: (focus) {if (focus) print('Focus 1!');},
+            //     ),
+            //     Focus(
+            //       child: Container(width: 100, height: 100, color: Colors.green),
+            //       onFocusChange: (focus) {if (focus) print('Focus 2!');},
+            //     ),
+            //     Focus(
+            //       child: Container(width: 100, height: 100, color: Colors.yellow),
+            //       onFocusChange: (focus) {if (focus) print('Focus 3!');},
+            //     ),
+            //   ]
+            // ),
+            FloatingActionButton(
+              onPressed: _incrementCounter,
+              tooltip: 'Widen WebView',
+              child: const Icon(Icons.add),
+            ),
+            FloatingActionButton(
+              onPressed: _decrementCounter,
+              tooltip: 'Widen WebView',
+              child: const Icon(Icons.minimize),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () {
+          setState((){
+            flex = 5;
+          });
+        },
         tooltip: 'Widen WebView',
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.refresh),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
